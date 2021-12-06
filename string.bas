@@ -47,7 +47,6 @@
 360 goto 300
 
 400 print
-420 dealloc(buffer1_ptr )          : REM deallocate buffer
 439 gosub 9500                     : REM turn local echo back on
 450 print "All done. bye bye"
 500 goto 11000
