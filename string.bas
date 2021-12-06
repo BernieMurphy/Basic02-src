@@ -2,7 +2,7 @@
 .options
 .elfos
 10  REM Basic/02 terminal I/O string routines. November 30, 2021
-20  print "Starting print/read/string test version 1.3"
+20  print "Starting print/read/string test version 1.4"
 25  cmpresult = 2                   : REM string compare result 0=equal
 27  input_char = 0: output_char = 0 : REM input & output I/O routines
 
@@ -30,7 +30,7 @@
 215 gosub 9300                     : REM call PRINT_MSG
 218 print
 
-220 print "Input test message?";   : REM issue prompt
+220 print "Input test message?"    : REM prompt user for message
 225 gosub 9500                     : REM turn local echo on
 230 gosub 9400                     : REM call READ_MSG
 235 print
@@ -38,7 +38,7 @@
 250 gosub 9300                     : REM call PRINT_MSG
 260 print
 
-300 print "Test character?";       : REM issue prompt
+300 print "Test character? use @ to quit";       : REM issue prompt
 305 gosub 9600                     : REM turn local echo off
 310 gosub 9100: output_char = input_char                             
 340 gosub 9200                     : REM call PRINT_CHAR
