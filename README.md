@@ -1,4 +1,4 @@
 # Basic02-src
-Basic02 programming examples including ASM stubs to read asicii text,
-print ascii test, copy strings and compare strings
+ElfOS 1802 Basic/02 compiler programming examples including ASM stubs to implement reading asicii text,
+printing of ascii text, copying  strings, comparing strings and other useful functions. 
 
