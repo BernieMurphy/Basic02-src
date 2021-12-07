@@ -1,3 +1,6 @@
+.elfos
+.options
+.binary
 10 REM CONVERT VOLTS TO POWER IN WATTS FOR ANY LOAD
 20 REM WRITTEN BY B. MURPHY FEB 17, 2020
 25 REM MODIFIED FOR 1802 Basic compiler JUN 25, 2021
@@ -8,11 +11,11 @@
 80 INPUT "ENTER RMS VOLTAGE END RANGE ",E!
 100 INPUT "ENTER RMS VOLTAGE INCREMENT ",I!
 120 PRINT                                                                     
-130 LET V!=S!                                                                   
-140 LET P!=V!*V!/Z!
-150 LET K!=V!*2.*1.414
+130 V!=S!                                                                   
+140 P!=V!*V!/Z!
+150 K!=V!*2.*1.414
 160 PRINT "RMS VOLTS ",V!,"  PP VOLTS ",K!," POWER ",P!," WATTS"
-170 LET V!=V!+I!
+170 V!=V!+I!
 180 IF V!<=E! GOTO 140
 190 PRINT                                                                     
 200 INPUT "ANOTHER RUN?  ENTER 1 FOR YES ",R
