@@ -1,61 +1,70 @@
 .elfos
 .binary
 .options
-10  print "File I/O test Version 1.4 December 19, 2021"
-15  debug = 0                      : REM set debug switch to 1 to turn on
-20  buffer1_size    = 256:  buffer2_size    = 256
-25  file_number = 1                 : REM indicate we are using file #1
-30  inp_buffer_size = 256:  owt_buffer_size = 256
-35  control_z = 26 
-40  ioflag = 0: ioresult = 0: in_char = 0: crchar = 13
-45  maximum_reads   = 1000          : REM maximum number of reads
+10  REM This program demonstates how to open any file using Basic/02.
+15  REM file_number, file_open_type and io_buffer must be set prior
+20  REM to calling the assember open routine at line 30000.
 
-50  gosub 1000                      : REM allocate buffer_1
-55  gosub 1200                      : REM allocate buffer_2
-60  gosub 1300                      : REM allocate terminal input  buffer 
-65  gosub 1400                      : REM allocate terminal output buffer
-70  gosub 30100                     : REM store compiler iobuffer into io_buffer_ptr
+30  print "File I/O test Version 1.7 December 22, 2021"
+35  debug = 0                       : REM set debug to 1 for a debug trace
+40  file_number = 5                 : REM indicate file number to open (1-8)
+45  file_open_type = 16             : REM open for read only
+
+50  buffer1_size    = 256:  buffer2_size    = 256
+55  inp_buffer_size = 256:  out_buffer_size = 256
+60  control_z = 26: bschar =8: crchar =13
+65  ioflag = 0: ioresult = 0: in_char = 0
+70  maximum_reads   = 1000          : REM maximum number of reads
+75  file_name_max = 19              : REM maximum file name size for ElfOS
+
+80  gosub 1000                      : REM allocate buffer_1
+81  gosub 1200                      : REM allocate buffer_2
+82  gosub 1300                      : REM allocate terminal input  buffer 
+83  gosub 1400                      : REM allocate terminal output buffer
+84  gosub 30100                     : REM compiler iobuffer into io_buffer_ptr
 
 
-
-100 print "Use <CNTL>z to cancel. file name?":
-105 for i = 0 to 25                 : REM allow 26 characters to be inputed
+100 print "Use <CNTL>z to cancel. File name?":
+105 j = 0                           : REM set file buffer offset to 0
 110 gosub 9100                      : REM read character from terminal
 120 if debug print " in_char=", in_char:
-130 if in_char = crchar goto 185    : REM check for CR
+130 if in_char = crchar goto 190    : REM check for CR
 135 if in_char = control_z goto 800 : REM check for CNTL_Z
+140 if in_char = bschar    goto 160 : REM is this a back space?
+150 poke inp_buffer_ptr+j,in_char   : REM store character in buffer
+155 goto 170
+160 j = j - 1                       : REM back up pointer
+163 if j < 0 j = 0                  : REM if we backed up too far, reset        
+165 goto 175                        : REM do not increase pointer 
+170 j = j + 1                       : REM bump pointer in buffer
+175 if j <= file_name_max goto 110
+180 print " File name too long"
+185 goto 100
 
-150 poke inp_buffer_ptr+i,in_char
-160 next i
-170 print " file name too long"
-180 goto 100
+190 print
+195 poke inp_buffer_ptr+j,0         : REM file name needs zero at end    
+200 buffer1_ptr = inp_buffer_ptr    : REM source string contains file name
+210 buffer2_ptr = io_buffer_ptr     : REM target string is for open routine
+220 gosub 9800                      : REM copy file name into iobuffer
 
-185 print
-190 poke inp_buffer_ptr+i,0        : REM file name needs binary zero at end    
-200 buffer1_ptr = inp_buffer_ptr   : REM source string contains file name
-210 buffer2_ptr = io_buffer_ptr    : REM targe string is for open routine
-220 gosub 9800
-
-230 gosub 30000                    : REM open file for input as #1
+230 gosub 30000                     : REM open file 
 240 if debug print "OPEN/I ioflag=";ioflag; "  iosresul=";IORESULT
 250 if ioflag <> 0 goto 820
 260 for i = 0 to maximum_reads
 270 gosub 1700                      : REM read records from file
-280 save_buffer_ptr = out_buffer_ptr
-290 owt_buffer_ptr = inp_buffer_ptr
-300 gosub 9300                      : REM print record
-310 if EOF(file_number) goto 100
+280 save_buffer_ptr = out_buffer_ptr: REM Not needed but there for future use
+290 out_buffer_ptr = inp_buffer_ptr
+300 gosub 9300                      : REM print whole record
+310 if EOF(file_number) goto 100    : REM end-of-file reached? 
 320 next i
 330 print "maximum number of reads requests exceded
 
 
 800 print 
-805 print "all done. bye bye"
+805 print "All done. bye bye"
 810 goto  32000                    : REM we are all done
 820 print "file not found"
 830 goto 100
-
-
 
 
 1000  REM allocate buffer 1 
@@ -71,17 +80,17 @@
 1340  return
 
 1400  REM allocate buffer for teminal output routines
-1420  owt_buffer_ptr  = alloc(owt_buffer_size)
+1420  out_buffer_ptr  = alloc(out_buffer_size)
 1440  return
 
 
-
-1700 REM read from file number number 1, placing a binary zero at end of buffer
-1710 fread #1 inp_buffer_ptr,inp_buffer_size-1
+1700 REM FREAD from file number X, placing a binary zero at end of buffer
+1710 fread #5 inp_buffer_ptr,inp_buffer_size-1
 1720 if debug print "FREAD  ioflag=";ioflag; "  ioresult=";ioresult
 1730 last_buffer_ptr = inp_buffer_ptr+ioresult
 1740 poke last_buffer_ptr,0
 1750 return
+
 
 9100 REM READ_CHAR - read on character from terminal
 9110    asm
@@ -103,13 +112,11 @@ f_read: equ    0ff06h              ; f_read vector
 
 
 
-
-
 9300 REM PRINT_MSG - print asciiz string to terminal
 9310    asm
-        ldi    v_owt_buffer_ptr.1 ; point to buffer pointer msb
+        ldi    v_out_buffer_ptr.1 ; point to buffer pointer msb
         phi    rf
-        ldi    v_owt_buffer_ptr.0     ; point to buffer pointer lsb
+        ldi    v_out_buffer_ptr.0     ; point to buffer pointer lsb
         plo    rf                 ; now rf has address of ptrprin
         inc    rf                 ; now point to lsb of pointer 
         ldn    rf                 ; now load lsb of pointer
@@ -163,23 +170,40 @@ f_strcpy: equ  0ff18h
 
 
 
-
-
-30000 REM Open file for input as #1. This is a hack to allow
-30010 REM an abritray file to be open at runtime.
-30020 REM iobuffer should have the file name set upon entry
+30000 REM OPEN
+;
+; Inputs file_number    : 1-5
+;        file_open_type : Elf/OS file open code
+;        iobuffer       : file name
+; Outputs: open file status set in ioflag and ioresult
+;
 30030   asm       
-        ldi             013h                   ; Need to allocate 531 bytes
-        plo             rc
-        ldi             2
+        ldi             013h                   ; Need to allocate 531 bytes -
+        plo             rc                     ; 512 bytes for I/O buffer and
+        ldi             2                      ; 19 bytes for fildes
         phi             rc
-        sep             scall                   ; Allocate memory from the heap
+        sep             scall                  ; Allocate memory from the heap
         dw              alloc
-        ldi             (file1_+0*2).0         ; Point to file handle
+        ldi             file1_.0               ; Point to file handle number 1
         plo             rd
-        ldi             (file1_+0*2).1
+        ldi             file1_.1
         phi             rd
-        ghi             rf                      ; store allocated memory to handle
+        
+
+        ldi             v_file_number.1
+        phi             rc
+        ldi             v_file_number.0
+        plo             rc
+        inc             rc
+        ldn             rc                      ; we now have file number
+; The following code assumes the file handles are in consecutive order
+open_1: smi             1                       ; test file number
+        lbz             open_2                  ; do we have the correct file #?
+        inc             rd                      ; bump addres to
+        inc             rd                      ;   to next file handle
+        lbr             open_1                  ; and try again
+
+open_2: ghi             rf                      ; store allocated memory to handle
         str             rd
         inc             rd
         glo             rf
@@ -208,12 +232,18 @@ f_strcpy: equ  0ff18h
         dec             rd
         dec             rd
         dec             rd
+        ldi             v_file_open_type.1       ; get opentype addr
+        phi             rf
+        ldi             v_file_open_type.0
+        plo             rf
+        inc             rf                       ; point to lsb 
+        ldn             rf                       ; load open type
+        plo             r7                       ; and save for Elf/OS open call
+
         ldi             iobuffer.1              ; Point to filename
         phi             rf
         ldi             iobuffer.0
         plo             rf
-        ldi             16                      ; Open for read only
-        plo             r7                      ; set open flags
         sep             scall                   ; Call Elf/OS to open the file
         dw              0306h
         sep             scall                   ; Set I/O return variables
@@ -230,12 +260,11 @@ f_strcpy: equ  0ff18h
         plo             rf
         ldi             iobuffer.1              ; point to i/o buffer.1
         str             rf                      ; and stor in io_buffer_ptr.1
-        ldi             iobuffer.0              ; point to i/o buffer.1
+        ldi             iobuffer.0              ; point to i/o buffer.0
         inc             rf                      ; bump pointer by one
         str             rf                      ; and store in io_buffer_ptr.0
         end
 30110 return
-
 30500  data 0                                   : REM keep compiler happy
 32000  end
 
