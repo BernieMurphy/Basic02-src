@@ -3,7 +3,7 @@ ElfOS 1802 Basic/02 compiler programming examples using ASM stubs
 to enhance functionality
 
 
-fileio.bas  Example of opening a dynamic file name & printing the contents
+fileio.bas: Example of opening a dynamic file name & printing the contents
 
 iotest.bas: Example of testing all file I/O functions
 
