@@ -10,12 +10,12 @@ STRING copy.
 
 iotest.bas:  Example of testing all BASIC/02 file I/O functions.
 
-lunar.bas:  Lunar landder program updated to run on Basic/02.
+lunar.bas:  Lunar lander program updated to run on Basic/02.
 
 print.bas:  Example of printing strings from Basic/02. Includes Basic
-callable ASM functions for READ a character from terminal, PRINT
+callable ASM functions for READ a character from terminal, PRINT a
 character to terminal, PRINT ASCIIZ string to terminal, READ ASCII
-string from terminal,turn LOCAL ECHO on and turn LOCAL ECHO off.
+string from terminal, turn LOCAL ECHO on and turn LOCAL ECHO off.
 
 
 string.bas:  Example of string manipulation. Includes Basic callable ASM 
