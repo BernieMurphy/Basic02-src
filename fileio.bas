@@ -5,7 +5,7 @@
 15  REM file_number, file_open_type and io_buffer must be set prior
 20  REM to calling the assember open routine at line 30000.
 
-30  print "File I/O test Version 1.8 December 26, 2021"
+30  print "File I/O test Version 1.9 December 28, 2021"
 35  debug = 0                       : REM set debug to 1 for a debug trace
 40  file_number = 5                 : REM indicate file number to open (1-8)
 45  file_open_type = 16             : REM open for read only
@@ -21,7 +21,7 @@
 81  gosub 1200                      : REM allocate buffer_2
 82  gosub 1300                      : REM allocate terminal input  buffer 
 83  gosub 1400                      : REM allocate terminal output buffer
-84  gosub 30100                     : REM compiler iobuffer into io_buffer_ptr
+84  gosub 30700                     : REM compiler iobuffer into io_buffer_ptr
 
 
 100 print "Use <CNTL>z to cancel. File name?":
@@ -49,22 +49,25 @@
 
 230 gosub 30000                     : REM open file 
 240 if debug print "OPEN/I ioflag=";ioflag; "  iosresul=";IORESULT
-250 if ioflag <> 0 goto 820
+250 if ioflag <> 0 goto 860
 260 for i = 0 to maximum_reads
 270 gosub 1700                      : REM read records from file
 280 save_buffer_ptr = out_buffer_ptr: REM Not needed but there for future use
 290 out_buffer_ptr = inp_buffer_ptr
 300 gosub 9300                      : REM print whole record
-310 if EOF(file_number) goto 100    : REM end-of-file reached? 
+310 if EOF(file_number) goto 900    : REM end-of-file reached? 
 320 next i
 330 print "maximum number of reads requests exceded
 
 
-800 print 
-805 print "All done. bye bye"
-810 goto  32000                    : REM we are all done
-820 print "file not found"
-830 goto 100
+800 print
+840 print "All done. bye bye"
+850 goto  32000                    : REM we are all done
+860 print "file not found"
+870 goto 100
+900 gosub 30500                      : REM call close route using filenum
+910 if debug print "CLOSE ioflag=";ioflag; "  iosresul=";IORESULT
+920 goto 100
 
 
 1000  REM allocate buffer 1 
@@ -173,9 +176,9 @@ f_strcpy: equ  0ff18h
 30000 REM OPEN
 30030   asm
 ;
-; Inputs file_number    : 1-8
-;        file_open_type : Elf/OS file open code
-;        iobuffer       : file name
+; Inputs:  file_number    : 1-8
+;          file_open_type : Elf/OS file open code
+;          iobuffer       : file name
 ; Outputs: open file status set in ioflag and ioresult
 ;
        
@@ -253,8 +256,64 @@ open_2: ghi             rf                      ; store allocated memory to hand
 30040 return
 
 
-30100 REM get compiler iobuffer address in Basic space
-30105   asm
+30500 REM CLOSE
+30510   asm
+;
+; Inputs:  file_number    : 1-8
+; Outputs: file close and memory freed
+;
+        ldi             file1_.0                ; Point to file handle number 1
+        plo             rf
+        ldi             file1_.1
+        phi             rf
+        ldi             v_file_number.1
+        phi             rc
+        ldi             v_file_number.0
+        plo             rc
+        inc             rc
+        ldn             rc                      ; we now have file number  
+; The following code assumes the file handles are in consecutive order
+close_1:smi             1                       ; test file number
+        lbz             close_2                 ; do we have the correct file #?
+        inc             rf                      ; bump addres to
+        inc             rf                      ;   to next file handle
+        lbr             close_1                 ; and try again
+close_2:lda   rf                                ; Retrieve FILDES
+        phi   rd
+        lda   rf
+        plo   rd
+        sep   scall                              ; Call Elf/OS to close the file
+        dw    0312h                              ; o_open uses rd as pointer
+        sep   scall 
+        dw    ioresults                         ; Set I/O return variables
+
+        ldi             file1_.0                ; Point to file handle number 1
+        plo             rd
+        ldi             file1_.1
+        phi             rd
+        ldi             v_file_number.1
+        phi             rc
+        ldi             v_file_number.0
+        plo             rc
+        inc             rc
+        ldn             rc                     ; we now have actual file number
+; The following code assumes the file handles are in consecutive order
+close_3:smi             1                       ; test file number
+        lbz             close_4                 ; do we have the correct file #?
+        inc             rd                      ; bump addres to
+        inc             rd                      ;   to next file handle
+        lbr             close_3                 ; and try again   
+close_4:lda   rd                                ; Retrieve FILDES 
+        phi   rf
+        lda   rd
+        plo   rf
+        sep   scall                             ; deallocate memory used by file
+        dw    dealloc                           ; deallocate uses rf as pointer
+        end
+30520 return
+
+30700 REM get compiler iobuffer address in Basic space
+30710   asm
         ldi             v_io_buffer_ptr.1       ; get basic iobuffer ptr
         phi             rf
         ldi             v_io_buffer_ptr.0
@@ -265,7 +324,9 @@ open_2: ghi             rf                      ; store allocated memory to hand
         inc             rf                      ; bump pointer by one
         str             rf                      ; and store in io_buffer_ptr.0
         end
-30110 return
-30500  data 0                                   : REM keep compiler happy
+30720 return
+
+
+31900  data 0                                   : REM keep compiler happy
 32000  end
 
