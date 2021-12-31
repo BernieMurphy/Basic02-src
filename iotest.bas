@@ -1,4 +1,5 @@
 .elfos
+.binary
 .options
 10  REM Test I/O functions in 1802 BASIC/2 compiler. Nov 21, 2021
 20  buffer_size = 16
@@ -7,7 +8,7 @@
 50  poke buffer_ptr+i,i+1
 66  next i
 70  x1=1:y1=5:z1=25
-80  print "I/O test 1.4 started"
+80  print "I/O test 1.5 started"
 90  print "1 Open for Input"
 100 print "2 Open for Output"
 110 print "3 Open for Append"
