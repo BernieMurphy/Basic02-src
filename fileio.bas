@@ -5,13 +5,14 @@
 15  REM file_number, file_open_type and io_buffer must be set prior
 20  REM to calling the assember open routine at line 30000.
 
-30  print "File I/O test Version 1.9 December 28, 2021"
-35  debug = 0                       : REM set debug to 1 for a debug trace
+30  print "File I/O test Version 2.0 December 31, 2021"
+35  debug = 1                       : REM set debug to 1 for a debug trace
 40  file_number = 5                 : REM indicate file number to open (1-8)
 45  file_open_type = 16             : REM open for read only
 
 50  buffer1_size    = 256:  buffer2_size    = 256
 55  inp_buffer_size = 256:  out_buffer_size = 256
+
 60  control_z = 26: bschar =8: crchar =13
 65  ioflag = 0: ioresult = 0: in_char = 0
 70  maximum_reads   = 1000          : REM maximum number of reads
@@ -22,6 +23,7 @@
 82  gosub 1300                      : REM allocate terminal input  buffer 
 83  gosub 1400                      : REM allocate terminal output buffer
 84  gosub 30700                     : REM compiler iobuffer into io_buffer_ptr
+85  if debug print "compiler I/O buffer address ";io_buffer_ptr
 
 
 100 print "Use <CNTL>z to cancel. File name?":
@@ -79,6 +81,7 @@
 1280  return
 
 1300  REM allocate buffer for teminal input routines
+1310  inp_buffer_ptr  = 0
 1320  inp_buffer_ptr  = alloc(inp_buffer_size)
 1340  return
 
@@ -108,6 +111,10 @@ f_read: equ    0ff06h              ; f_read vector
         ldi    0
         str    rf                  ; zero out msb of char
         inc    rf                  ; point to lsb of char variable
+#ifdef  use32bits
+        inc    rf                   ; for 32 bit word we need 
+        inc    rf                   ; to skip over 2 more bytes
+#endif
         glo    re                  ; retrieve read character             
         str    rf                  ; and store in lsb of char variable
         end
@@ -121,15 +128,19 @@ f_read: equ    0ff06h              ; f_read vector
         phi    rf
         ldi    v_out_buffer_ptr.0     ; point to buffer pointer lsb
         plo    rf                 ; now rf has address of ptrprin
-        inc    rf                 ; now point to lsb of pointer 
+        inc    rf                 ; now point to lsb of pointer
+#ifdef  use32bits
+        inc    rf                 ; for 32 bit word we need 
+        inc    rf                   ; to skip over 2 more bytes
+#endif
         ldn    rf                 ; now load lsb of pointer
         plo    re                 ; re.0 now pointing lsb  buffer address
         dec    rf                 ; rf now points to msb of pointer
-        ldn    rf                 ; d = msb of pointer
+        ldn    rf                 ; get second byte of buffer address
         phi    rf                 ; save msb of buffer pointer
-        glo    re                 ; d = lsb of pointer
-        plo    rf                 ; save lsb of pointer 
-        sep    r4                 ; call f_msg to output asciiz string
+        glo    re
+        plo    rf                 ; save first byte of address
+        sep    call               ; call f_msg to output asciiz string
         dw     f_msg
         end
 9320 return
@@ -146,7 +157,11 @@ f_strcpy: equ  0ff18h
         phi    rf
         ldi    v_buffer1_ptr.0    ; point to buffer pointer lsb
         plo    rf                 ; now rf has address of ptr
-        inc    rf                 ; now point to lsb of pointer 
+        inc    rf                 ; now point to lsb of pointer
+#ifdef  use32bits
+        inc    rf                   ; for 32 bit word we need 
+        inc    rf                   ; to skip over 2 more bytes
+#endif
         ldn    rf                 ; now load lsb of pointer
         plo    re                 ; re.0 now pointing lsb  buffer address
         dec    rf                 ; rf now points to msb of pointer
@@ -158,15 +173,19 @@ f_strcpy: equ  0ff18h
         phi    rd
         ldi    v_buffer2_ptr.0    ; point to buffer pointer lsb
         plo    rd                 ; now rf has address of ptr
-        inc    rd                 ; now point to lsb of pointer 
-        ldn    rd                 ; now load lsb of pointer
-        plo    re                 ; re.0 now pointing lsb  buffer 2 address
-        dec    rd                 ; rf now points to msb of pointer
-        ldn    rd                 ; d = msb of pointer
-        phi    rd                 ; save msb of buffer pointer
+        inc    rd                 ; now point to lsb of poi
+#ifdef  use32bits
+        inc    rd                   ; for 32 bit word we need 
+        inc    rd                   ; to skip over 2 more bytes
+#endif
+        ldn    rd                 ; now load first byte of pointer
+        plo    re                 ; re.0 now pointing to byte 1 of  buffer_2 address
+        dec    rd                 ; rd now points to second byte of pointer
+        ldn    rd                 ; d = second byte of pointer
+        phi    rd                 ; save second byte of buffer_2 pointer
         glo    re                 ; d = lsb of pointer
         plo    rd                 ; save lsb of pointer
-        sep    r4
+        sep    R4
         dw     f_strcpy           ; BIOS string copy call
         end
 9820  return
@@ -199,6 +218,10 @@ f_strcpy: equ  0ff18h
         ldi             v_file_number.0
         plo             rc
         inc             rc
+#ifdef  use32bits
+        inc             rc                    ; for 32 bit word we need 
+        inc             rc                    ; to skip over 2 more bytes
+#endif    
         ldn             rc                      ; we now have file number
 ; The following code assumes the file handles are in consecutive order
 open_1: smi             1                       ; test file number
@@ -241,6 +264,10 @@ open_2: ghi             rf                      ; store allocated memory to hand
         ldi             v_file_open_type.0
         plo             rf
         inc             rf                       ; point to lsb 
+#ifdef  use32bits
+        inc             rf                       ; for 32 bit word we need 
+        inc             rf                        ; to skip over 2 more bytes
+#endif     
         ldn             rf                       ; load open type
         plo             r7                       ; and save for Elf/OS open call
 
@@ -271,6 +298,10 @@ open_2: ghi             rf                      ; store allocated memory to hand
         ldi             v_file_number.0
         plo             rc
         inc             rc
+#ifdef  use32bits
+        inc             rc                      ; for 32 bit word we need 
+        inc             rc                      ; to skip over 2 more bytes
+#endif     
         ldn             rc                      ; we now have file number  
 ; The following code assumes the file handles are in consecutive order
 close_1:smi             1                       ; test file number
@@ -278,12 +309,12 @@ close_1:smi             1                       ; test file number
         inc             rf                      ; bump addres to
         inc             rf                      ;   to next file handle
         lbr             close_1                 ; and try again
-close_2:lda   rf                                ; Retrieve FILDES
-        phi   rd
-        lda   rf
-        plo   rd
-        sep   scall                              ; Call Elf/OS to close the file
-        dw    0312h                              ; o_open uses rd as pointer
+close_2:lda             rf                                ; Retrieve FILDES
+        phi             rd
+        lda             rf
+        plo             rd
+        sep             scall                   ; Call Elf/OS to close the file
+        dw              0312h                   ; o_close uses rd as pointer
         sep   scall 
         dw    ioresults                         ; Set I/O return variables
 
@@ -296,6 +327,10 @@ close_2:lda   rf                                ; Retrieve FILDES
         ldi             v_file_number.0
         plo             rc
         inc             rc
+#ifdef  use32bits
+        inc             rc                      ; for 32 bit word we need 
+        inc             rc                      ; to skip over 2 more bytes
+#endif       
         ldn             rc                     ; we now have actual file number
 ; The following code assumes the file handles are in consecutive order
 close_3:smi             1                       ; test file number
@@ -317,7 +352,11 @@ close_4:lda   rd                                ; Retrieve FILDES
         ldi             v_io_buffer_ptr.1       ; get basic iobuffer ptr
         phi             rf
         ldi             v_io_buffer_ptr.0
-        plo             rf
+        plo             rf 
+#ifdef  use32bits         
+        inc             rf                      ; for 32 bit word we need 
+        inc             rf                      ; to skip over 2 more bytes
+#endif    
         ldi             iobuffer.1              ; point to i/o buffer.1
         str             rf                      ; and stor in io_buffer_ptr.1
         ldi             iobuffer.0              ; point to i/o buffer.0

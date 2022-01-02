@@ -1,20 +1,20 @@
 .binary
 .options
 .elfos
-10  REM Basic/02 terminal I/O string routines. November 30, 2021
+10  REM Basic/02 terminal I/O string routines. December 31, 2021
 
 20  buffer_size = 64
 30  buffer_ptr  = alloc(buffer_size)
 40  for i = 0 to (buffer_size-2)   
-50  poke buffer_ptr+i,i+64         : REM place ascii table in buffer
+50  poke buffer_ptr+i,i+64        : REM place ascii table in buffer
 60  next i    
-70  end_ptr=buffer_ptr+buffer_size-1 : REM now set last_ptr to end of buffer
-80  poke end_ptr,0                : REM place binary zero at end of buffer
+70  ptr=buffer_ptr+buffer_size-1  : REM set ptr to end of buffer
+80  poke ptr,0
 
-90  print "Starting print/read test version 1.5"
+90  print "Print/read test version 1.7",buffer_ptr,ptr
 
-120 for char = 64 to 127           : REM print out ASCII characters 1 at a time
-140 gosub 9200                     : REM call PRINT_CHAR       
+120 for char = 64 to 127          : REM print out ASCII characters 1 at a time
+140 gosub 9200                    : REM call PRINT_CHAR       
 150 next char
 160 print
 
@@ -28,17 +28,16 @@
 250 gosub 9300                     : REM call PRINT_MSG
 260 print
 
-300 print "Test character?";       : REM issue prompt
+300 print "Use @ to quit. Input test character?";
 305 gosub 9600                     : REM turn local echo off
 310 gosub 9100                     : REM call READ_CHAR
+330 if char = 64 goto 400          : REM if character is @ we exit
 340 gosub 9200                     : REM call PRINT_CHAR
-350 print                          : REM output CR,LF
-355 if char = 64 goto 400 
-360 goto 300
+345 print
+350 goto 300
 
 400 print
-420 dealloc(buffer_ptr)            : REM deallocate buffer
-439 gosub 9500                     : REM turn local echo back on
+420 gosub 9500                      : REM turn local echo on
 450 print "All done. bye bye"
 500 goto 9900
 
@@ -52,7 +51,11 @@ f_read: equ    0ff06h              ; f_read vector
         phi    rf
         ldi    v_char.0
         plo    rf                   ; now pointing to msb of char
-        inc    rf                   ; point to lsb of char variable
+        inc    rf                   ; point to lsb byte of 16 bit word
+#ifdef  use32bits
+        inc    rf                   ; for 32 bit word we need 
+        inc    rf                   ; to skip over 2 more bytes
+#endif
         glo    re                   ; retrieve read character             
         str    rf                   ; and store in lsb of char variable
         end
@@ -68,6 +71,10 @@ f_read: equ    0ff06h              ; f_read vector
         ldi    v_char.0
         plo    rf                  ; now pointing to msb of char
         inc    rf                  ; point to lsb byte of 16 bit  word
+#ifdef  use32bits
+        inc    rf                   ; for 32 bit word we need 
+        inc    rf                   ; to skip over 2 more bytes
+#endif
         ldn    rf                  ; get character into d
         sep    r4                  ; call f_type routine
         dw   f_type
@@ -77,17 +84,19 @@ f_read: equ    0ff06h              ; f_read vector
 9300 REM PRINT_MSG - print asciiz string to terminal
 9310    asm
         ldi    v_buffer_ptr.1     ; point to buffer pointer msb
-        phi    rf
+        phi    rd
         ldi    v_buffer_ptr.0     ; point to buffer pointer lsb
-        plo    rf                 ; now rf has address of ptrprin
-        inc    rf                 ; now point to lsb of pointer 
-        ldn    rf                 ; now load lsb of pointer
-        plo    re                 ; re.0 now pointing lsb  buffer address
-        dec    rf                 ; rf now points to msb of pointer
-        ldn    rf                 ; d = msb of pointer
+        plo    rd                 ; now rf has address of ptrprin
+        inc    rd                 ; now point to lsb of 16 bit pointer
+#ifdef  use32bits
+        inc    rd                   ; for 32 bit word we need 
+        inc    rd                   ; to skip over 2 more bytes
+#endif
+        ldn    rd                 ; now load lsb of pointer
+        plo    rf                 ; re.0 now pointing lsb  buffer address
+        dec    rd                 ; rf now points to msb of pointer
+        ldn    rd                 ; d = msb of pointer
         phi    rf                 ; save msb of buffer pointer
-        glo    re                 ; d = lsb of pointer
-        plo    rf                 ; save lsb of pointer 
         sep    r4                 ; call f_msg to output asciiz string
         dw     f_msg
         end
@@ -96,19 +105,24 @@ f_read: equ    0ff06h              ; f_read vector
 9400 REM READ_MSG - read string from terminal
 9410    asm
         ldi    v_buffer_ptr.1     ; point to buffer pointer msb
-        phi    rf
+        phi    rd
         ldi    v_buffer_ptr.0     ; point to buffer pointer lsb
-        plo    rf                 ; now rf has address of ptr
-        inc    rf                 ; now point to lsb of pointer 
-        ldn    rf                 ; now load lsb of pointer
-        plo    re                 ; re.0 now pointing lsb  buffer address
-        dec    rf                 ; rf now points to msb of pointer
-        ldn    rf                 ; d = msb of pointer
-        phi    rf                 ; save msb of buffer pointer
-        glo    re                 ; d = lsb of pointer
-        plo    rf                 ; save lsb of pointer 
-        sep    r4                 ; call f_input to read ascii string
+        plo    rd                 ; now rf has address of ptr
+        inc    rd                 ; now point to lsb of pointer 
+#ifdef  use32bits
+        inc    rd                   ; for 32 bit word we need 
+        inc    rd                   ; to skip over 2 more bytes
+#endif
+        ldn    rd                 ; now load lsb of pointer
+        plo    rf                 ; rf.0 now pointing first buffer address
+        dec    rd                 ; rd now points to second byte of pointer 
+        ldn    rd                 ; d = second byte of pointer
+        phi    rf                 ; save second  byte of buffer pointer
+        sep    call               ; call f_input to read ascii string
         dw     f_input            ; call BIOS input routine
+        sep    call                 ; call routine to output inline message               
+        dw     f_inmsg            ; call output routine to move cursor the next line
+        db     0ah,0dh,0          ; CR and LF
         end 
 9440 return
 

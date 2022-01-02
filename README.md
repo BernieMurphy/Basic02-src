@@ -1,6 +1,6 @@
 # Basic02-src
 ElfOS 1802 Basic/02 compiler programming examples using ASM stubs
-to enhance functionality.
+to enhance functionality. This routines work in both 16 and 32 bit mode
 
 
 fileio.bas:  Example of opening & closing a dynamic file name & printing
