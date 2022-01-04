@@ -2,7 +2,7 @@
 .options
 .elfos
 10  REM Basic/02 terminal I/O string routines. December 31, 2021
-
+15  debug = 1
 20  buffer_size = 64
 30  buffer_ptr  = alloc(buffer_size)
 40  for i = 0 to (buffer_size-2)   
@@ -11,7 +11,7 @@
 70  ptr=buffer_ptr+buffer_size-1  : REM set ptr to end of buffer
 80  poke ptr,0
 
-90  print "Print/read test version 1.7",buffer_ptr,ptr
+90  print "Print/read test version 1.8",buffer_ptr,ptr
 
 120 for char = 64 to 127          : REM print out ASCII characters 1 at a time
 140 gosub 9200                    : REM call PRINT_CHAR       
@@ -21,10 +21,10 @@
 190 gosub 9300                     : REM call PRINT_MSG using buffer_ptr
 200 print
 
-
 220 print "Input test message?";   : REM issue prompt
 225 gosub 9500                     : REM turn local echo on
 230 gosub 9400                     : REM call READ_MSG
+240 print
 250 gosub 9300                     : REM call PRINT_MSG
 260 print
 
@@ -97,7 +97,7 @@ f_read: equ    0ff06h              ; f_read vector
         dec    rd                 ; rf now points to msb of pointer
         ldn    rd                 ; d = msb of pointer
         phi    rf                 ; save msb of buffer pointer
-        sep    r4                 ; call f_msg to output asciiz string
+        sep    scall              ; call f_msg to output asciiz string
         dw     f_msg
         end
 9320 return
@@ -105,24 +105,26 @@ f_read: equ    0ff06h              ; f_read vector
 9400 REM READ_MSG - read string from terminal
 9410    asm
         ldi    v_buffer_ptr.1     ; point to buffer pointer msb
-        phi    rd
+        phi    rf
         ldi    v_buffer_ptr.0     ; point to buffer pointer lsb
-        plo    rd                 ; now rf has address of ptr
-        inc    rd                 ; now point to lsb of pointer 
+        plo    rf                 ; now rf has address of ptr
+        inc    rf                 ; now point to lsb of pointer 
 #ifdef  use32bits
-        inc    rd                   ; for 32 bit word we need 
-        inc    rd                   ; to skip over 2 more bytes
+        ldi    0
+        str    rf
+        inc    rf                   ; for 32 bit word we need
+        str    rf 
+        inc    rf                   ; to skip over 2 more bytes
 #endif
-        ldn    rd                 ; now load lsb of pointer
-        plo    rf                 ; rf.0 now pointing first buffer address
-        dec    rd                 ; rd now points to second byte of pointer 
-        ldn    rd                 ; d = second byte of pointer
+        ldn    rf                 ; now load lsb of pointer
+        plo    re                 ; re.0 now pointing first buffer address
+        dec    rf                 ; rf now points to second byte of pointer 
+        ldn    rf                 ; d = second byte of pointer
         phi    rf                 ; save second  byte of buffer pointer
-        sep    call               ; call f_input to read ascii string
+        glo    re
+        plo    rf      
+        sep   scall               ; call f_input to read ascii string
         dw     f_input            ; call BIOS input routine
-        sep    call                 ; call routine to output inline message               
-        dw     f_inmsg            ; call output routine to move cursor the next line
-        db     0ah,0dh,0          ; CR and LF
         end 
 9440 return
 

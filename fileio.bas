@@ -6,7 +6,7 @@
 20  REM to calling the assember open routine at line 30000.
 
 30  print "File I/O test Version 2.0 December 31, 2021"
-35  debug = 1                       : REM set debug to 1 for a debug trace
+35  debug = 0                       : REM set debug to 1 for a debug trace
 40  file_number = 5                 : REM indicate file number to open (1-8)
 45  file_open_type = 16             : REM open for read only
 
@@ -140,7 +140,7 @@ f_read: equ    0ff06h              ; f_read vector
         phi    rf                 ; save msb of buffer pointer
         glo    re
         plo    rf                 ; save first byte of address
-        sep    call               ; call f_msg to output asciiz string
+        sep    scall              ; call f_msg to output asciiz string
         dw     f_msg
         end
 9320 return

@@ -30,7 +30,6 @@
 210 out_buffer_ptr= buffer2_ptr+32   : REM point to ASCII character 
 215 gosub 9300                     : REM call PRINT_MSG
 218 print
-
 220 print "Input test message?"    : REM prompt user for message
 225 gosub 9500                     : REM turn local echo on
 230 gosub 9400                     : REM call READ_MSG
@@ -73,13 +72,13 @@
 1230  for i = 0 to (buffer1_size-2)   
 1240  poke buffer2_ptr +i,i           : REM characters in buffer2
 1250  next i    
-1260  last_ptr=buffer2_ptr +buffer2_size-1 : REM now set last_ptr to end of buffer
+1260  last_ptr=buffer2_ptr +buffer2_size-1 : REM set last_ptr to end of buffer
 1270  poke last_ptr,0                : REM place binary zero at end of buffer
 1280  return
 
 1300  REM get buffer for teminal input routines
 1310  inp_buffer_size = 256
-1320  inp_buffer_size  = alloc(inp_buffer_size)
+1320  inp_buffer_ptr   = alloc(inp_buffer_size)
 1340  return
 
 1400  REM get buffer for teminal outputroutines
@@ -148,10 +147,10 @@ f_read: equ    0ff06h              ; f_read vector
         phi    rf                 ; save msb of buffer pointer
         glo    re
         plo    rf                 ; save first byte of address
-        sep    call               ; call f_msg to output asciiz string
+        sep    scall              ; call f_msg to output asciiz string
         dw     f_msg
         end
-9320 return
+9320  return
 
 
 9400 REM READ_MSG - read string from terminal
@@ -177,7 +176,7 @@ f_read: equ    0ff06h              ; f_read vector
         phi    rf                 ; save msb of buffer pointer
         glo    re                 ; d = lsb of pointer
         plo    rf                 ; save lsb of pointer 
-        sep    r4                 ; call f_input to read ascii string
+        sep    scall              ; call f_input to read ascii string
         dw     f_input            ; call BIOS input routine
         end 
 9440 return
