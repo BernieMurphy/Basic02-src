@@ -1,8 +1,8 @@
 .binary
 .options
 .elfos
-10  REM Basic/02 terminal I/O string routines. November 30, 2021
-20  print "Starting print/read/string test version 1.5"
+10  REM Basic/02 terminal I/O string routines. January 4thg, 2022
+20  print "Starting print/read/string test version 1.6"
 25  cmpresult = 2                   : REM string compare result 0=equal
 26  input_char   = 0
 27  input_char = 0: output_char = 0 : REM input & output I/O routines
@@ -89,7 +89,7 @@
 9100 REM READ_CHAR - read one character from terminal
 9110    asm
 f_read: equ    0ff06h              ; f_read vector
-        sep    r4                  ; read a single character from terminal
+        sep    scall               ; read a single character from terminal
         dw     f_read
         plo    re
         ldi    v_input_char.1         ; point to character variable
@@ -123,7 +123,7 @@ f_read: equ    0ff06h              ; f_read vector
         inc    rf                   ; to skip over 2 more bytes
 #endif
         ldn    rf                  ; get character into d
-        sep    r4                  ; call f_type routine
+        sep    scall               ; call f_type routine
         dw   f_type
         end
 9220 return
@@ -163,8 +163,8 @@ f_read: equ    0ff06h              ; f_read vector
         ldi    v_inp_buffer_ptr.1    ; point to buffer pointer msb
         phi    rf
         ldi    v_inp_buffer_ptr.0    ; point to buffer pointer lsb
-        plo    rf                 ; now rf has address of ptr
-        inc    rf                 ; now point to lsb of pointer 
+        plo    rf                    ; now rf has address of ptr
+        inc    rf                    ; now point to lsb of pointer 
 #ifdef  use32bits
         inc    rf                   ; for 32 bit word we need 
         inc    rf                   ; to skip over 2 more bytes
@@ -234,8 +234,8 @@ f_strcmp: equ  0ff12h
         plo    rd                 ; now rf has address of ptr
         inc    rd                 ; now point to lsb of pointer
 #ifdef  use32bits
-        inc    rd                   ; for 32 bit word we need 
-        inc    rd                   ; to skip over 2 more bytes
+        inc    rd                 ; for 32 bit word we need 
+        inc    rd                 ; to skip over 2 more bytes
 #endif 
         ldn    rd                 ; now load lsb of pointer
         plo    re                 ; re.0 now pointing lsb  buffer address
@@ -244,7 +244,7 @@ f_strcmp: equ  0ff12h
         phi    rd                 ; save msb of buffer pointer
         glo    re                 ; d = lsb of pointer
         plo    rd                 ; save lsb of pointer
-        sep    r4
+        sep    scall  
         dw     f_strcmp           ; BIOS string compare call
         plo    re
         ldi    v_cmpresult.1      ; point to result variable
@@ -253,8 +253,8 @@ f_strcmp: equ  0ff12h
         plo    rf                 ; now pointing to msb of cmpresult variable
         inc    rf                 ; point to lsb of cmpresult variable
 #ifdef  use32bits
-        inc    rf                   ; for 32 bit word we need 
-        inc    rf                   ; to skip over 2 more bytes
+        inc    rf                 ; for 32 bit word we need 
+        inc    rf                 ; to skip over 2 more bytes
 #endif
         glo    re                 ; retrieve f_strcmp result value              
         str    rf                 ; and store in lsb of cmpresult variable
@@ -275,8 +275,8 @@ f_strcpy: equ  0ff18h
         plo    rf                 ; now rf has address of ptr
         inc    rf                 ; now point to lsb of pointer
 #ifdef  use32bits
-        inc    rf                   ; for 32 bit word we need 
-        inc    rf                   ; to skip over 2 more bytes
+        inc    rf                 ; for 32 bit word we need 
+        inc    rf                 ; to skip over 2 more bytes
 #endif
         ldn    rf                 ; now load lsb of pointer
         plo    re                 ; re.0 now pointing lsb  buffer address
@@ -291,8 +291,8 @@ f_strcpy: equ  0ff18h
         plo    rd                 ; now rf has address of ptr
         inc    rd                 ; now point to lsb of poi
 #ifdef  use32bits
-        inc    rd                   ; for 32 bit word we need 
-        inc    rd                   ; to skip over 2 more bytes
+        inc    rd                 ; for 32 bit word we need 
+        inc    rd                 ; to skip over 2 more bytes
 #endif
         ldn    rd                 ; now load first byte of pointer
         plo    re                 ; re.0 now pointing to byte 1 of  buffer_2 address
@@ -301,7 +301,7 @@ f_strcpy: equ  0ff18h
         phi    rd                 ; save second byte of buffer_2 pointer
         glo    re                 ; d = lsb of pointer
         plo    rd                 ; save lsb of pointer
-        sep    R4
+        sep    scall 
         dw     f_strcpy           ; BIOS string copy call
         end
 9820  return

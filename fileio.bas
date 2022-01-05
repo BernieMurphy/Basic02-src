@@ -5,7 +5,7 @@
 15  REM file_number, file_open_type and io_buffer must be set prior
 20  REM to calling the assember open routine at line 30000.
 
-30  print "File I/O test Version 2.0 December 31, 2021"
+30  print "File I/O test Version 2.1 janauary 4th, 2022
 35  debug = 0                       : REM set debug to 1 for a debug trace
 40  file_number = 5                 : REM indicate file number to open (1-8)
 45  file_open_type = 16             : REM open for read only
@@ -101,7 +101,7 @@
 9100 REM READ_CHAR - read on character from terminal
 9110    asm
 f_read: equ    0ff06h              ; f_read vector
-        sep    r4                  ; read a single character from terminal
+        sep    scall               ; read a single character from terminal
         dw     f_read
         plo    re
         ldi    v_in_char.1         ; point to character variable
@@ -185,7 +185,7 @@ f_strcpy: equ  0ff18h
         phi    rd                 ; save second byte of buffer_2 pointer
         glo    re                 ; d = lsb of pointer
         plo    rd                 ; save lsb of pointer
-        sep    R4
+        sep    scall
         dw     f_strcpy           ; BIOS string copy call
         end
 9820  return
@@ -305,7 +305,7 @@ open_2: ghi             rf                      ; store allocated memory to hand
         ldn             rc                      ; we now have file number  
 ; The following code assumes the file handles are in consecutive order
 close_1:smi             1                       ; test file number
-        lbz             close_2                 ; do we have the correct file #?
+        lbz             close_2                 ; do we have correct file #?
         inc             rf                      ; bump addres to
         inc             rf                      ;   to next file handle
         lbr             close_1                 ; and try again
@@ -315,8 +315,8 @@ close_2:lda             rf                                ; Retrieve FILDES
         plo             rd
         sep             scall                   ; Call Elf/OS to close the file
         dw              0312h                   ; o_close uses rd as pointer
-        sep   scall 
-        dw    ioresults                         ; Set I/O return variables
+        sep             scall 
+        dw              ioresults               ; Set I/O return variables
 
         ldi             file1_.0                ; Point to file handle number 1
         plo             rd
@@ -334,7 +334,7 @@ close_2:lda             rf                                ; Retrieve FILDES
         ldn             rc                     ; we now have actual file number
 ; The following code assumes the file handles are in consecutive order
 close_3:smi             1                       ; test file number
-        lbz             close_4                 ; do we have the correct file #?
+        lbz             close_4                 ; do we have correct file #?
         inc             rd                      ; bump addres to
         inc             rd                      ;   to next file handle
         lbr             close_3                 ; and try again   

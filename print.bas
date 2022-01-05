@@ -1,8 +1,8 @@
 .binary
 .options
 .elfos
-10  REM Basic/02 terminal I/O string routines. December 31, 2021
-15  debug = 1
+10  REM Basic/02 terminal I/O string routines. January 4th, 2022
+15  REM      
 20  buffer_size = 64
 30  buffer_ptr  = alloc(buffer_size)
 40  for i = 0 to (buffer_size-2)   
@@ -11,7 +11,7 @@
 70  ptr=buffer_ptr+buffer_size-1  : REM set ptr to end of buffer
 80  poke ptr,0
 
-90  print "Print/read test version 1.8",buffer_ptr,ptr
+90  print "Print/read test version 1.9",buffer_ptr,ptr
 
 120 for char = 64 to 127          : REM print out ASCII characters 1 at a time
 140 gosub 9200                    : REM call PRINT_CHAR       
@@ -43,8 +43,8 @@
 
 9100 REM READ_CHAR - read on character from terminal
 9110    asm
-f_read: equ    0ff06h              ; f_read vector
-        sep    r4                  ; read a single character from terminal
+f_read: equ    0ff06h               ; f_read vector
+        sep    scall                ; read a single character from terminal
         dw     f_read
         plo    re
         ldi    v_char.1             ; point to character variable
@@ -76,7 +76,7 @@ f_read: equ    0ff06h              ; f_read vector
         inc    rf                   ; to skip over 2 more bytes
 #endif
         ldn    rf                  ; get character into d
-        sep    r4                  ; call f_type routine
+        sep    scall               ; call f_type routine
         dw   f_type
         end
 9220 return
