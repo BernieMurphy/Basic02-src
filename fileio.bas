@@ -5,7 +5,7 @@
 15  REM file_number, file_open_type and io_buffer must be set prior
 20  REM to calling the assember open routine at line 30000.
 
-30  print "File I/O test Version 2.1 janauary 4th, 2022
+30  print "File I/O test Version 2.1 January 4th, 2022
 35  debug = 0                       : REM set debug to 1 for a debug trace
 40  file_number = 5                 : REM indicate file number to open (1-8)
 45  file_open_type = 16             : REM open for read only
