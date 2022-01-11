@@ -1,7 +1,7 @@
 .elfos
 .binary
 .options
-10  REM This program demonstates how to open any file using Basic/02.
+10  REM This program demonstates how to open/close  any file using Basic/02.
 15  REM file_number, file_open_type and io_buffer must be set prior
 20  REM to calling the assember open routine at line 30000.
 
